@@ -56,18 +56,41 @@ export default function CheckoutPage() {
 
         setIsLoading(true);
 
+        // Construct WhatsApp URL BEFORE async operations (critical for iOS)
+        const message = `*New Order!* \n\n*Customer:* ${formData.name}\n*Phone:* ${formData.phone}\n*Address:* ${formData.address}\n\n*Order Details:*\n${items.map(i => `- ${i.quantity}x ${i.name}`).join('\n')}\n\n*Total:* ₹${totalPrice}\n*Payment:* ${paymentMethod}\n\n*Instructions:* ${formData.instructions}`;
+        const encodedMessage = encodeURIComponent(message);
+        const whatsappUrl = `https://wa.me/918877116603?text=${encodedMessage}`;
+
         // Simulate API call
         await new Promise(resolve => setTimeout(resolve, 2000));
 
-        const message = `*New Order!* \n\n*Customer:* ${formData.name}\n*Phone:* ${formData.phone}\n*Address:* ${formData.address}\n\n*Order Details:*\n${items.map(i => `- ${i.quantity}x ${i.name}`).join('\n')}\n\n*Total:* ₹${totalPrice}\n*Payment:* ${paymentMethod}\n\n*Instructions:* ${formData.instructions}`;
+        // iOS fix: Use location.href instead of window.open for better compatibility
+        window.location.href = whatsappUrl;
 
-        const encodedMessage = encodeURIComponent(message);
-        window.open(`https://wa.me/918877116603?text=${encodedMessage}`, '_blank');
+        // These will execute after user returns from WhatsApp
+        setTimeout(() => {
+            clearCart();
+            toast("Order placed successfully!");
+            router.push('/');
+            setIsLoading(false);
+        }, 1000);
+    };
 
-        clearCart();
-        toast("Order placed successfully!");
-        router.push('/');
-        setIsLoading(false);
+    // Test functions for debugging WhatsApp redirect
+    const testWhatsAppDirect = () => {
+        const testMessage = encodeURIComponent("Test message - Direct redirect (location.href)");
+        window.location.href = `https://wa.me/918877116603?text=${testMessage}`;
+    };
+
+    const testWhatsAppNewTab = () => {
+        const testMessage = encodeURIComponent("Test message - New tab (window.open _blank)");
+        window.open(`https://wa.me/918877116603?text=${testMessage}`, '_blank');
+    };
+
+    const testWhatsAppAPI = () => {
+        const testMessage = encodeURIComponent("Test message - WhatsApp API format");
+        // Try the api.whatsapp.com format as alternative
+        window.location.href = `https://api.whatsapp.com/send?phone=918877116603&text=${testMessage}`;
     };
 
     const getPaymentIcon = (method: PaymentMethod) => {
@@ -158,33 +181,33 @@ export default function CheckoutPage() {
                         </div>
                     </section>
                     {/* Recommendations Carousel */}
-                <section className="mt-8 md:mt-0 space-y-4 overflow-hidden">
-                    <h2 className="text-lg font-bold font-heading">Complete your meal with</h2>
-                    <div className="flex gap-4 overflow-x-auto pb-6 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
-                        {recommendations.map((item) => (
-                            <div key={item.id} className="flex-shrink-0 w-36 bg-card rounded-xl border overflow-hidden shadow-sm flex flex-col">
-                                <div className="h-24 bg-secondary/30 relative flex items-center justify-center">
-                                    <div className="text-3xl font-heading text-muted-foreground/40">{item.name.charAt(0)}</div>
-                                </div>
-                                <div className="p-3 flex flex-col flex-1">
-                                    <h3 className="font-semibold text-xs leading-tight line-clamp-2 mb-1 h-8">{item.name}</h3>
-                                    <div className="flex items-center justify-between mt-auto">
-                                        <span className="text-sm font-bold">₹{item.price}</span>
-                                        <button
-                                            onClick={() => {
-                                                addItem(item);
-                                                toast(`${item.name} added!`);
-                                            }}
-                                            className="p-1.5 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 border border-green-200"
-                                        >
-                                            <Plus className="h-4 w-4" />
-                                        </button>
+                    <section className="mt-8 md:mt-0 space-y-4 overflow-hidden">
+                        <h2 className="text-lg font-bold font-heading">Complete your meal with</h2>
+                        <div className="flex gap-4 overflow-x-auto pb-6 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
+                            {recommendations.map((item) => (
+                                <div key={item.id} className="flex-shrink-0 w-36 bg-card rounded-xl border overflow-hidden shadow-sm flex flex-col">
+                                    <div className="h-24 bg-secondary/30 relative flex items-center justify-center">
+                                        <div className="text-3xl font-heading text-muted-foreground/40">{item.name.charAt(0)}</div>
+                                    </div>
+                                    <div className="p-3 flex flex-col flex-1">
+                                        <h3 className="font-semibold text-xs leading-tight line-clamp-2 mb-1 h-8">{item.name}</h3>
+                                        <div className="flex items-center justify-between mt-auto">
+                                            <span className="text-sm font-bold">₹{item.price}</span>
+                                            <button
+                                                onClick={() => {
+                                                    addItem(item);
+                                                    toast(`${item.name} added!`);
+                                                }}
+                                                className="p-1.5 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 border border-green-200"
+                                            >
+                                                <Plus className="h-4 w-4" />
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        ))}
-                    </div>
-                </section>
+                            ))}
+                        </div>
+                    </section>
 
                     {/* Order Items Review */}
                     <section className="space-y-4">
@@ -213,7 +236,38 @@ export default function CheckoutPage() {
                     </section>
                 </form>
 
-                
+
+            </div>
+
+            {/* WhatsApp Test Section - For Debugging */}
+            <div className="fixed bottom-24 left-4 right-4 z-40 bg-amber-50 border-2 border-amber-300 rounded-xl shadow-lg p-4">
+                <div className="text-center mb-3">
+                    <p className="text-xs font-bold text-amber-900 uppercase tracking-wide">🧪 WhatsApp Redirect Test (Debug)</p>
+                    <p className="text-[10px] text-amber-700 mt-0.5">Test which method works on your device</p>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <Button
+                        onClick={testWhatsAppDirect}
+                        variant="outline"
+                        size="sm"
+                        className="bg-white hover:bg-green-50 border-green-300 text-green-800 text-xs">
+                        Test 1: Direct
+                    </Button>
+                    <Button
+                        onClick={testWhatsAppNewTab}
+                        variant="outline"
+                        size="sm"
+                        className="bg-white hover:bg-blue-50 border-blue-300 text-blue-800 text-xs">
+                        Test 2: New Tab
+                    </Button>
+                    <Button
+                        onClick={testWhatsAppAPI}
+                        variant="outline"
+                        size="sm"
+                        className="bg-white hover:bg-purple-50 border-purple-300 text-purple-800 text-xs">
+                        Test 3: API
+                    </Button>
+                </div>
             </div>
 
             {/* Custom Sticky Checkout Bar */}
