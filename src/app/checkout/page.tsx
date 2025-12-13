@@ -76,23 +76,6 @@ export default function CheckoutPage() {
         }, 1000);
     };
 
-    // Test functions for debugging WhatsApp redirect
-    const testWhatsAppDirect = () => {
-        const testMessage = encodeURIComponent("Test message - Direct redirect (location.href)");
-        window.location.href = `https://wa.me/918877116603?text=${testMessage}`;
-    };
-
-    const testWhatsAppNewTab = () => {
-        const testMessage = encodeURIComponent("Test message - New tab (window.open _blank)");
-        window.open(`https://wa.me/918877116603?text=${testMessage}`, '_blank');
-    };
-
-    const testWhatsAppAPI = () => {
-        const testMessage = encodeURIComponent("Test message - WhatsApp API format");
-        // Try the api.whatsapp.com format as alternative
-        window.location.href = `https://api.whatsapp.com/send?phone=918877116603&text=${testMessage}`;
-    };
-
     const getPaymentIcon = (method: PaymentMethod) => {
         switch (method) {
             case "UPI": return <Wallet className="h-5 w-5" />;
@@ -237,37 +220,6 @@ export default function CheckoutPage() {
                 </form>
 
 
-            </div>
-
-            {/* WhatsApp Test Section - For Debugging */}
-            <div className="fixed bottom-24 left-4 right-4 z-40 bg-amber-50 border-2 border-amber-300 rounded-xl shadow-lg p-4">
-                <div className="text-center mb-3">
-                    <p className="text-xs font-bold text-amber-900 uppercase tracking-wide">🧪 WhatsApp Redirect Test (Debug)</p>
-                    <p className="text-[10px] text-amber-700 mt-0.5">Test which method works on your device</p>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                    <Button
-                        onClick={testWhatsAppDirect}
-                        variant="outline"
-                        size="sm"
-                        className="bg-white hover:bg-green-50 border-green-300 text-green-800 text-xs">
-                        Test 1: Direct
-                    </Button>
-                    <Button
-                        onClick={testWhatsAppNewTab}
-                        variant="outline"
-                        size="sm"
-                        className="bg-white hover:bg-blue-50 border-blue-300 text-blue-800 text-xs">
-                        Test 2: New Tab
-                    </Button>
-                    <Button
-                        onClick={testWhatsAppAPI}
-                        variant="outline"
-                        size="sm"
-                        className="bg-white hover:bg-purple-50 border-purple-300 text-purple-800 text-xs">
-                        Test 3: API
-                    </Button>
-                </div>
             </div>
 
             {/* Custom Sticky Checkout Bar */}
