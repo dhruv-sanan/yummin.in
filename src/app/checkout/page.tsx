@@ -12,25 +12,31 @@ import {
     DialogTitle,
     DialogTrigger
 } from "@/components/ui/dialog";
-import { ArrowLeft, ChevronUp, CreditCard, Banknote, Wallet, Plus } from "lucide-react";
+import { ArrowLeft, ChevronUp, CreditCard, Banknote, Wallet, Plus, Tag, X, ChevronDown, AlertCircle } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/context/ToastContext";
 import { MENU_ITEMS, MenuItem } from "@/data/menu";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
+import { useStoreStatus } from "@/hooks/useStoreStatus";
+import { saveOrder } from "@/lib/api";
 
 type PaymentMethod = "UPI" | "COD" | "CARD";
 
 export default function CheckoutPage() {
-    const { items, totalPrice, clearCart, addItem } = useCart();
+    const { items, totalPrice, finalPrice, discountAmount, couponCode, clearCart, addItem, applyCoupon, removeCoupon, availableCoupons } = useCart();
     const router = useRouter();
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(false);
     const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("UPI");
     const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
+    const [couponInput, setCouponInput] = useState("");
+    const [showCouponDropdown, setShowCouponDropdown] = useState(false);
+    const couponInputRef = useRef<HTMLInputElement>(null);
+    const { isOpen, message: storeMessage } = useStoreStatus();
 
     // Form states
     const [formData, setFormData] = useState({
@@ -40,11 +46,31 @@ export default function CheckoutPage() {
         instructions: ""
     });
 
-    // Filter recommended items (e.g., drinks or low price items not in cart)
-    const recommendations = MENU_ITEMS.filter(
-        item => (item.category === "Floats" || item.category === "Milk Bottle") &&
-            !items.find(i => i.id === item.id)
-    ).slice(0, 5);
+    // Smart Upselling Logic: Analyze cart composition
+    const analyzeCart = () => {
+        const sweetCategories = ["Milkshakes", "Exotic Milkshakes", "Smoothies", "Classic Shakes", "Fruit Shakes", "Floats"];
+        const sweetItems = items.filter(item => sweetCategories.includes(item.category));
+        const sweetPercentage = items.length > 0 ? (sweetItems.length / items.length) * 100 : 0;
+
+        // If >70% sweet items, suggest savory. Otherwise, show bestsellers not in cart
+        if (sweetPercentage > 70) {
+            return MENU_ITEMS.filter(
+                item => item.category === "Savory" && !items.find(i => i.id === item.id)
+            ).slice(0, 5);
+        } else {
+            return MENU_ITEMS.filter(
+                item => item.isBestseller && !items.find(i => i.id === item.id)
+            ).slice(0, 5);
+        }
+    };
+
+    const recommendations = analyzeCart();
+
+    // Generate unique order ID
+    const generateOrderId = (): string => {
+        const randomNum = Math.floor(1000 + Math.random() * 9000);
+        return `YUM-${randomNum}`;
+    };
 
     const handlePlaceOrder = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -56,10 +82,51 @@ export default function CheckoutPage() {
 
         setIsLoading(true);
 
+        // Generate Order ID
+        const orderId = generateOrderId();
+
         // Construct WhatsApp URL BEFORE async operations (critical for iOS)
-        const message = `*New Order!* \n\n*Customer:* ${formData.name}\n*Phone:* ${formData.phone}\n*Address:* ${formData.address}\n\n*Order Details:*\n${items.map(i => `- ${i.quantity}x ${i.name}`).join('\n')}\n\n*Total:* ₹${totalPrice}\n*Payment:* ${paymentMethod}\n\n*Instructions:* ${formData.instructions}`;
+        let message = `*🎉 New Order #${orderId}*\n\n`;
+        message += `*Customer:* ${formData.name}\n`;
+        message += `*Phone:* ${formData.phone}\n`;
+        message += `*Address:* ${formData.address}\n\n`;
+        message += `*Order Details:*\n${items.map(i => `- ${i.quantity}x ${i.name}`).join('\n')}\n\n`;
+        message += `*Subtotal:* ₹${totalPrice}\n`;
+
+        if (discountAmount > 0) {
+            message += `*Discount (${couponCode}):* -₹${discountAmount}\n`;
+            message += `*Final Price:* ₹${finalPrice}\n`;
+        } else {
+            message += `*Final Price:* ₹${totalPrice}\n`;
+        }
+
+        message += `*Payment:* ${paymentMethod}\n\n`;
+        message += `*Instructions:* ${formData.instructions || 'None'}`;
+
         const encodedMessage = encodeURIComponent(message);
         const whatsappUrl = `https://wa.me/918877116603?text=${encodedMessage}`;
+
+        // Save order to localStorage for dashboard
+        saveOrder({
+            orderId,
+            timestamp: Date.now(),
+            customerName: formData.name,
+            customerPhone: formData.phone,
+            customerAddress: formData.address,
+            items: items.map(item => ({
+                id: item.id,
+                name: item.name,
+                price: item.price,
+                quantity: item.quantity,
+                category: item.category
+            })),
+            subtotal: totalPrice,
+            discount: discountAmount,
+            couponCode: couponCode || "",
+            finalPrice: finalPrice,
+            paymentMethod: paymentMethod,
+            instructions: formData.instructions
+        });
 
         // Simulate API call
         await new Promise(resolve => setTimeout(resolve, 2000));
@@ -104,6 +171,14 @@ export default function CheckoutPage() {
 
     return (
         <div className="min-h-screen bg-background pb-32 md:pb-0">
+            {/* Store Closed Banner */}
+            {!isOpen && (
+                <div className="sticky top-0 z-20 bg-orange-500 text-white px-4 py-3 flex items-center justify-center gap-2">
+                    <AlertCircle className="h-5 w-5" />
+                    <p className="text-sm font-medium">{storeMessage}</p>
+                </div>
+            )}
+
             {/* Header */}
             <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b p-4 flex items-center gap-4">
                 <Link href="/cart">
@@ -163,6 +238,96 @@ export default function CheckoutPage() {
                             </div>
                         </div>
                     </section>
+
+                    {/* Coupon Section */}
+                    <section className="space-y-4">
+                        <h2 className="text-lg font-bold font-heading flex items-center gap-2">
+                            <Tag className="h-5 w-5" />
+                            Apply Coupon
+                        </h2>
+                        <div className="bg-secondary/10 p-4 rounded-xl border border-secondary/20">
+                            {!couponCode ? (
+                                <div className="space-y-3">
+                                    <div className="relative">
+                                        <input
+                                            ref={couponInputRef}
+                                            type="text"
+                                            value={couponInput}
+                                            onChange={(e) => {
+                                                setCouponInput(e.target.value.toUpperCase());
+                                                setShowCouponDropdown(true);
+                                            }}
+                                            onFocus={() => setShowCouponDropdown(true)}
+                                            onBlur={() => setTimeout(() => setShowCouponDropdown(false), 200)}
+                                            placeholder="Enter or select coupon code"
+                                            className="w-full px-4 py-3 border rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
+                                        />
+                                        <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+
+                                        {/* Dropdown */}
+                                        {showCouponDropdown && availableCoupons.length > 0 && (
+                                            <div className="absolute z-20 w-full mt-1 bg-card border rounded-lg shadow-lg overflow-hidden">
+                                                {availableCoupons.map((coupon) => (
+                                                    <button
+                                                        key={coupon.code}
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setCouponInput(coupon.code);
+                                                            setShowCouponDropdown(false);
+                                                        }}
+                                                        className="w-full px-4 py-3 text-left hover:bg-secondary/50 transition-colors border-b last:border-b-0"
+                                                    >
+                                                        <div className="flex items-center justify-between">
+                                                            <span className="font-semibold text-sm">{coupon.code}</span>
+                                                            <span className="text-xs text-green-600 font-medium">
+                                                                {coupon.type === 'percentage' ? `${coupon.value}% OFF` : `₹${coupon.value} OFF`}
+                                                            </span>
+                                                        </div>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <Button
+                                        type="button"
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => {
+                                            const result = applyCoupon(couponInput);
+                                            if (result.success) {
+                                                toast(result.message);
+                                                setCouponInput("");
+                                            } else {
+                                                toast(result.message);
+                                            }
+                                        }}
+                                        className="w-full"
+                                    >
+                                        Apply Coupon
+                                    </Button>
+                                </div>
+                            ) : (
+                                <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
+                                    <div className="flex items-center gap-2">
+                                        <Tag className="h-4 w-4 text-green-600" />
+                                        <div>
+                                            <p className="text-sm font-semibold text-green-700">{couponCode}</p>
+                                            <p className="text-xs text-green-600">Saved ₹{discountAmount}!</p>
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={() => {
+                                            removeCoupon();
+                                            toast("Coupon removed");
+                                        }}
+                                        className="text-green-700 hover:text-green-900"
+                                    >
+                                        <X className="h-4 w-4" />
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    </section>
                     {/* Recommendations Carousel */}
                     <section className="mt-8 md:mt-0 space-y-4 overflow-hidden">
                         <h2 className="text-lg font-bold font-heading">Complete your meal with</h2>
@@ -194,7 +359,7 @@ export default function CheckoutPage() {
 
                     {/* Order Items Review */}
                     <section className="space-y-4">
-                        <h2 className="text-lg font-bold font-heading">Item Total</h2>
+                        <h2 className="text-lg font-bold font-heading">Bill Details</h2>
                         <div className="bg-card rounded-xl border shadow-sm divide-y">
                             {items.map((item) => (
                                 <div key={item.id} className="flex justify-between p-4">
@@ -211,9 +376,21 @@ export default function CheckoutPage() {
                                     <div className="font-semibold text-sm">₹{item.price * item.quantity}</div>
                                 </div>
                             ))}
-                            <div className="p-4 flex justify-between font-bold border-t bg-secondary/5">
-                                <span>Total Bill</span>
-                                <span>₹{totalPrice}</span>
+                            <div className="p-4 space-y-2">
+                                <div className="flex justify-between text-sm">
+                                    <span>Subtotal</span>
+                                    <span>₹{totalPrice}</span>
+                                </div>
+                                {discountAmount > 0 && (
+                                    <div className="flex justify-between text-sm text-green-600 font-medium">
+                                        <span>Discount ({couponCode})</span>
+                                        <span>-₹{discountAmount}</span>
+                                    </div>
+                                )}
+                                <div className="flex justify-between font-bold border-t pt-2 mt-2">
+                                    <span>Total Amount</span>
+                                    <span>₹{finalPrice}</span>
+                                </div>
                             </div>
                         </div>
                     </section>
@@ -281,15 +458,15 @@ export default function CheckoutPage() {
                         size="lg"
                         onClick={handlePlaceOrder}
                         className="h-14 bg-[#3E2723] hover:bg-[#3E2723]/90 text-white font-bold text-lg rounded-xl shadow-lg flex justify-between items-center px-6 min-w-[200px] sm:min-w-[240px]"
-                        disabled={isLoading}
+                        disabled={isLoading || !isOpen}
                     >
                         <div className="flex flex-col items-start leading-none gap-0.5">
                             <span className="text-[10px] font-medium opacity-80 tracking-wide">TOTAL</span>
-                            <span className="text-xl">₹{totalPrice}</span>
+                            <span className="text-xl">₹{finalPrice}</span>
                         </div>
                         <span className="flex items-center gap-1 text-base ml-4">
-                            Place Order
-                            {isLoading ? null : <ChevronUp className="h-4 w-4 rotate-90" />}
+                            {!isOpen ? 'Store Closed' : 'Place Order'}
+                            {isLoading || !isOpen ? null : <ChevronUp className="h-4 w-4 rotate-90" />}
                         </span>
                     </Button>
                 </div>

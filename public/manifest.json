@@ -1,0 +1,54 @@
+{
+    "name": "Yummin - Amritsar's Favorite",
+    "short_name": "Yummin",
+    "description": "Amritsar's favorite spot for Shakes, Juices, Beverages, and Desserts. Order instantly!",
+    "start_url": "/menu",
+    "display": "standalone",
+    "background_color": "#FDFBF7",
+    "theme_color": "#3E2723",
+    "orientation": "portrait",
+    "icons": [
+        {
+            "src": "/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ],
+    "categories": [
+        "food",
+        "shopping"
+    ],
+    "shortcuts": [
+        {
+            "name": "Menu",
+            "short_name": "Menu",
+            "description": "Browse our menu",
+            "url": "/menu",
+            "icons": [
+                {
+                    "src": "/icon-192.png",
+                    "sizes": "192x192"
+                }
+            ]
+        },
+        {
+            "name": "Cart",
+            "short_name": "Cart",
+            "description": "View your cart",
+            "url": "/cart",
+            "icons": [
+                {
+                    "src": "/icon-192.png",
+                    "sizes": "192x192"
+                }
+            ]
+        }
+    ]
+}

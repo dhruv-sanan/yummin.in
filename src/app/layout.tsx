@@ -10,6 +10,7 @@ import { WhatsAppButton } from "@/components/features/WhatsAppButton";
 import { NRIConciergeBot } from "@/components/features/NRIConciergeBot";
 import { FloatingMenu } from "@/components/features/FloatingMenu";
 import { StickyCartBar } from "@/components/features/StickyCartBar";
+import PWAInstallPrompt from "@/components/features/PWAInstallPrompt";
 import { JSON_LD } from "@/data/schema";
 
 const inter = Inter({
@@ -25,6 +26,19 @@ const outfit = Outfit({
 export const metadata: Metadata = {
   title: "Yummin - Taste the Difference",
   description: "Amritsar's favorite spot for Shakes, Juices, Beverages, and Desserts.",
+  manifest: "/manifest.json",
+  themeColor: "#3E2723",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Yummin",
+  },
+  viewport: {
+    width: "device-width",
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
+  },
 };
 
 export default function RootLayout({
@@ -56,6 +70,7 @@ export default function RootLayout({
             <NRIConciergeBot />
             <FloatingMenu />
             <StickyCartBar />
+            <PWAInstallPrompt />
           </ToastProvider>
         </CartProvider>
       </body>

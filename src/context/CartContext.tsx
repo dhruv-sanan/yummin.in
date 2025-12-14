@@ -7,6 +7,17 @@ export interface CartItem extends MenuItem {
     quantity: number;
 }
 
+interface Coupon {
+    code: string;
+    type: 'percentage' | 'flat';
+    value: number;
+}
+
+const AVAILABLE_COUPONS: Coupon[] = [
+    { code: 'WELCOME10', type: 'percentage', value: 10 },
+    { code: 'FLAT50', type: 'flat', value: 50 }
+];
+
 interface CartContextType {
     items: CartItem[];
     addItem: (item: MenuItem) => void;
@@ -15,12 +26,19 @@ interface CartContextType {
     clearCart: () => void;
     totalItems: number;
     totalPrice: number;
+    couponCode: string;
+    discountAmount: number;
+    finalPrice: number;
+    applyCoupon: (code: string) => { success: boolean; message: string };
+    removeCoupon: () => void;
+    availableCoupons: Coupon[];
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
     const [items, setItems] = useState<CartItem[]>([]);
+    const [couponCode, setCouponCode] = useState<string>("");
 
     // Load from local storage on mount
     useEffect(() => {
@@ -34,6 +52,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
                     console.error("Failed to parse cart from local storage", e);
                 }
             }
+
+            const savedCoupon = localStorage.getItem("creme-coupon");
+            if (savedCoupon) {
+                // eslint-disable-next-line react-hooks/set-state-in-effect
+                setCouponCode(savedCoupon);
+            }
         }
     }, []);
 
@@ -41,6 +65,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     useEffect(() => {
         localStorage.setItem("creme-cart", JSON.stringify(items));
     }, [items]);
+
+    useEffect(() => {
+        localStorage.setItem("creme-coupon", couponCode);
+    }, [couponCode]);
 
     const addItem = (item: MenuItem) => {
         setItems((prev) => {
@@ -70,10 +98,48 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         );
     };
 
-    const clearCart = () => setItems([]);
+    const clearCart = () => {
+        setItems([]);
+        setCouponCode("");
+    };
+
+    const applyCoupon = (code: string): { success: boolean; message: string } => {
+        const upperCode = code.trim().toUpperCase();
+        const coupon = AVAILABLE_COUPONS.find(c => c.code === upperCode);
+
+        if (!coupon) {
+            return { success: false, message: "Invalid coupon code" };
+        }
+
+        if (totalPrice === 0) {
+            return { success: false, message: "Cart is empty" };
+        }
+
+        setCouponCode(coupon.code);
+        return { success: true, message: `Coupon ${coupon.code} applied!` };
+    };
+
+    const removeCoupon = () => {
+        setCouponCode("");
+    };
 
     const totalItems = items.reduce((acc, item) => acc + item.quantity, 0);
     const totalPrice = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
+
+    // Calculate discount
+    let discountAmount = 0;
+    if (couponCode) {
+        const coupon = AVAILABLE_COUPONS.find(c => c.code === couponCode);
+        if (coupon) {
+            if (coupon.type === 'percentage') {
+                discountAmount = Math.round((totalPrice * coupon.value) / 100);
+            } else {
+                discountAmount = Math.min(coupon.value, totalPrice);
+            }
+        }
+    }
+
+    const finalPrice = totalPrice - discountAmount;
 
     return (
         <CartContext.Provider
@@ -85,6 +151,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
                 clearCart,
                 totalItems,
                 totalPrice,
+                couponCode,
+                discountAmount,
+                finalPrice,
+                applyCoupon,
+                removeCoupon,
+                availableCoupons: AVAILABLE_COUPONS,
             }}
         >
             {children}

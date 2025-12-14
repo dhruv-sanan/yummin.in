@@ -23,7 +23,8 @@ export type Category =
     | "Smoothies"
     | "Milk Bottle"
     | "Fruit Cream"
-    | "Amritsari Specials";
+    | "Amritsari Specials"
+    | "Savory";
 
 export const CATEGORIES: Category[] = [
     "Milkshakes",
@@ -35,7 +36,8 @@ export const CATEGORIES: Category[] = [
     "Smoothies",
     "Milk Bottle",
     "Fruit Cream",
-    "Amritsari Specials"
+    "Amritsari Specials",
+    "Savory"
 ];
 
 export interface MenuGroup {
@@ -311,6 +313,49 @@ export const MENU_ITEMS: MenuItem[] = [
         description: "Thick and creamy Lassi. Topped with almonds and pista",
         price: 60,
         category: "Amritsari Specials",
+        isVegetarian: true
+    },
+
+    // Savory
+    {
+        id: "29",
+        name: "Paneer Tikka Sandwich",
+        description: "Grilled sandwich with spiced paneer tikka, veggies & mint chutney",
+        price: 149,
+        category: "Savory",
+        isVegetarian: true,
+        isBestseller: true
+    },
+    {
+        id: "30",
+        name: "Masala Fries",
+        description: "Crispy fries tossed with spicy masala seasoning",
+        price: 89,
+        category: "Savory",
+        isVegetarian: true
+    },
+    {
+        id: "31",
+        name: "Veg Grilled Sandwich",
+        description: "Classic grilled sandwich with fresh vegetables & cheese",
+        price: 129,
+        category: "Savory",
+        isVegetarian: true
+    },
+    {
+        id: "32",
+        name: "Nachos with Cheese",
+        description: "Crispy nachos topped with melted cheese & jalapeños",
+        price: 139,
+        category: "Savory",
+        isVegetarian: true
+    },
+    {
+        id: "33",
+        name: "Chilli Cheese Toast",
+        description: "Toasted bread topped with spicy cheese spread",
+        price: 99,
+        category: "Savory",
         isVegetarian: true
     }
 ];
