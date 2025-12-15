@@ -16,7 +16,7 @@ export default function InstallAppPage() {
     const [platform, setPlatform] = useState<'ios' | 'android' | 'desktop'>('android');
     const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
     const [isInstalled, setIsInstalled] = useState(false);
-    const { showToast } = useToast();
+    const { toast } = useToast();
 
     useEffect(() => {
         const userAgent = window.navigator.userAgent.toLowerCase();
@@ -48,17 +48,17 @@ export default function InstallAppPage() {
 
         window.addEventListener('appinstalled', () => {
             setIsInstalled(true);
-            showToast('App installed successfully! 🎉', 'success');
+            toast('App installed successfully! 🎉', 'success');
         });
 
         return () => {
             window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
         };
-    }, [showToast]);
+    }, [toast]);
 
     const handleInstallClick = async () => {
         if (isInstalled) {
-            showToast('App is already installed!', 'info');
+            toast('App is already installed!', 'info');
             return;
         }
 
@@ -68,22 +68,22 @@ export default function InstallAppPage() {
             const { outcome } = await deferredPrompt.userChoice;
 
             if (outcome === 'accepted') {
-                showToast('Installing app...', 'success');
+                toast('Installing app...', 'success');
             } else {
-                showToast('Follow the instructions below to install manually', 'info');
+                toast('Follow the instructions below to install manually', 'info');
             }
 
             setDeferredPrompt(null);
         } else if (platform === 'ios') {
             // iOS - scroll to instructions
-            showToast('Follow the instructions below to install on iOS', 'info');
+            toast('Follow the instructions below to install on iOS', 'info');
             const instructionsElement = document.getElementById('install-instructions');
             if (instructionsElement) {
                 instructionsElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
         } else {
             // Fallback - show instructions
-            showToast('Follow the instructions below for your device', 'info');
+            toast('Follow the instructions below for your device', 'info');
             const instructionsElement = document.getElementById('install-instructions');
             if (instructionsElement) {
                 instructionsElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
