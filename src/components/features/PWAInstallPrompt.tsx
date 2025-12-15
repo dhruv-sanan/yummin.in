@@ -20,8 +20,8 @@ export default function PWAInstallPrompt() {
     const pathname = usePathname();
 
     useEffect(() => {
-        // Only show on cart page for higher conversion
-        if (pathname !== "/cart") {
+        // Only show on menu page
+        if (pathname !== "/menu") {
             setShowPrompt(false);
             return;
         }
@@ -74,10 +74,10 @@ export default function PWAInstallPrompt() {
             setDeferredPrompt(null);
         });
 
-        // Show prompt after delay - only on cart page
+        // Show prompt after delay
         const timer = setTimeout(() => {
             setShowPrompt(true);
-        }, 3000); // Show after 3 seconds on cart page
+        }, 3000);
 
         return () => {
             clearTimeout(timer);
@@ -88,21 +88,33 @@ export default function PWAInstallPrompt() {
     const handleInstallClick = async () => {
         // For Chrome/Edge with native prompt
         if (deferredPrompt) {
+            // User clicked install - clear any dismissal cooldown
+            localStorage.removeItem('pwa-install-dismissed');
+            localStorage.setItem('pwa-install-intent', 'true');
+
             deferredPrompt.prompt();
             const { outcome } = await deferredPrompt.userChoice;
 
             if (outcome === 'accepted') {
                 console.log('User accepted the install prompt');
+                localStorage.removeItem('pwa-install-intent');
+            } else {
+                // User showed intent but dismissed browser prompt
+                // Redirect to instructions page
+                window.location.href = '/install-app';
             }
 
             setDeferredPrompt(null);
             setShowPrompt(false);
+        } else {
+            // No native prompt available - go to instructions
+            window.location.href = '/install-app';
         }
-        // For iOS/Safari - instructions are shown, just dismiss
     };
 
     const handleDismiss = () => {
         setShowPrompt(false);
+        // Only set cooldown if user dismissed the banner (not if they clicked install)
         localStorage.setItem('pwa-install-dismissed', new Date().toISOString());
     };
 

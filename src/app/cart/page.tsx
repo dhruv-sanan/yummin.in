@@ -95,7 +95,7 @@ export default function CartPage() {
                                     <div className="flex items-center justify-between mt-2">
                                         <div className="flex items-center gap-3 bg-secondary/50 rounded-lg p-1">
                                             <button
-                                                onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                                                onClick={() => updateQuantity(item.id, -1)}
                                                 className="h-8 w-8 flex items-center justify-center rounded-md bg-background shadow-sm hover:bg-white transition-colors"
                                                 disabled={item.quantity <= 1}
                                             >
@@ -103,7 +103,7 @@ export default function CartPage() {
                                             </button>
                                             <span className="font-medium w-4 text-center">{item.quantity}</span>
                                             <button
-                                                onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                                onClick={() => updateQuantity(item.id, 1)}
                                                 className="h-8 w-8 flex items-center justify-center rounded-md bg-background shadow-sm hover:bg-white transition-colors"
                                             >
                                                 <Plus className="h-3 w-3" />

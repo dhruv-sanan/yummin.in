@@ -39,7 +39,7 @@ export function StickyCartBar() {
                             <div className="bg-primary text-primary-foreground rounded-xl shadow-2xl p-4 flex items-center justify-between cursor-pointer hover:bg-primary/90 transition-colors">
                                 <div className="flex flex-col">
                                     <span className="font-bold text-lg uppercase flex items-center gap-2">
-                                        {totalItems} {totalItems === 1 ? 'Job' : 'Items'} Added
+                                        {totalItems} {totalItems === 1 ? 'Item' : 'Items'} Added
                                     </span>
                                     <span className="text-sm opacity-90 font-medium">₹{totalPrice} total</span>
                                 </div>

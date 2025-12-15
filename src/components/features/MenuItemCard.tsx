@@ -15,7 +15,7 @@ interface MenuItemCardProps {
 }
 
 export function MenuItemCard({ item, className }: MenuItemCardProps) {
-    const { items, addItem, removeItem } = useCart();
+    const { items, addItem, removeItem, updateQuantity } = useCart();
     const { toast } = useToast();
     const [showOverlay, setShowOverlay] = useState(false);
 
@@ -56,9 +56,10 @@ export function MenuItemCard({ item, className }: MenuItemCardProps) {
         }
     };
 
-    const handleRemove = (e: React.MouseEvent) => {
+    const handleDecrement = (e: React.MouseEvent) => {
         e.stopPropagation();
-        removeItem(item.id);
+        // Use updateQuantity to decrement by 1 (will auto-remove when reaching 0)
+        updateQuantity(item.id, -1);
     };
 
     return (
@@ -154,7 +155,7 @@ export function MenuItemCard({ item, className }: MenuItemCardProps) {
                         ) : (
                             <div className="flex items-center justify-between w-full h-9 bg-primary text-primary-foreground rounded-md shadow-md overflow-hidden">
                                 <button
-                                    onClick={handleRemove}
+                                    onClick={handleDecrement}
                                     className="h-full px-3 hover:bg-white/20 transition-colors flex items-center justify-center"
                                 >
                                     <Minus className="h-3 w-3 font-bold" />

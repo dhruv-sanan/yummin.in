@@ -88,13 +88,20 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
     const updateQuantity = (id: string, delta: number) => {
         setItems((prev) =>
-            prev.map((i) => {
-                if (i.id === id) {
-                    const newQty = Math.max(0, i.quantity + delta);
-                    return { ...i, quantity: newQty };
-                }
-                return i;
-            }).filter((i) => i.quantity > 0)
+            prev
+                .map((i) => {
+                    if (i.id === id) {
+                        const newQty = i.quantity + delta;
+                        // Only update if new quantity would be positive
+                        if (newQty > 0) {
+                            return { ...i, quantity: newQty };
+                        }
+                        // Return null to remove item when quantity reaches 0
+                        return null;
+                    }
+                    return i;
+                })
+                .filter((i): i is CartItem => i !== null)
         );
     };
 
