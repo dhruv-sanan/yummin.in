@@ -27,18 +27,19 @@ export const metadata: Metadata = {
   title: "Yummin - Taste the Difference",
   description: "Amritsar's favorite spot for Shakes, Juices, Beverages, and Desserts.",
   manifest: "/manifest.json",
-  themeColor: "#3E2723",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
     title: "Yummin",
   },
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
-  },
+};
+
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  themeColor: "#3E2723",
 };
 
 export default function RootLayout({

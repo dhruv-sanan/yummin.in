@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Utensils, X, Plus, Minus } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MENU_GROUPS, MENU_ITEMS } from "@/data/menu";
@@ -11,11 +11,13 @@ import { usePathname, useRouter } from "next/navigation";
 export function FloatingMenu() {
     const [isOpen, setIsOpen] = useState(false);
     const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
+    const menuRef = useRef<HTMLDivElement>(null);
 
     const router = useRouter();
 
     const scrollToCategory = (category: string) => {
         setIsOpen(false);
+        setExpandedGroup(null); // Close expanded categories when navigating
 
         if (pathname !== "/menu") {
             // Navigate to menu page with hash
@@ -58,6 +60,24 @@ export function FloatingMenu() {
     const pathname = usePathname();
     const showStickyBar = items.length > 0 && pathname !== "/cart" && pathname !== "/checkout";
 
+    // Click outside to close menu
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+                setIsOpen(false);
+                setExpandedGroup(null);
+            }
+        };
+
+        if (isOpen) {
+            document.addEventListener("mousedown", handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, [isOpen]);
+
     // Hide menu completely on checkout
     if (pathname === "/checkout") return null;
 
@@ -71,6 +91,7 @@ export function FloatingMenu() {
             <AnimatePresence mode="wait">
                 {isOpen ? (
                     <motion.div
+                        ref={menuRef}
                         layoutId="menu-container"
                         className="bg-card text-card-foreground shadow-2xl rounded-2xl overflow-hidden w-[300px] sm:w-[350px] flex flex-col max-h-[80vh]"
                         initial={{ opacity: 0, scale: 0.9, originX: 1, originY: 1 }}
